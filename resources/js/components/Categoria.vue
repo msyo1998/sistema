@@ -54,14 +54,14 @@
             <tbody>
               <tr v-for="(categoria) in arrayCategoria" :key="categoria.id">
                 <td>
-                  <button type="button" class="btn btn-warning btn-sm">
-                    <i class="icon-pencil"></i>
-                  </button> &nbsp;
                   <button
                     type="button"
+                    class="btn btn-warning btn-sm"
                     @click="abrirModal('categoria', 'actualizar', categoria)"
-                    class="btn btn-danger btn-sm"
                   >
+                    <i class="icon-pencil"></i>
+                  </button> &nbsp;
+                  <button type="button" class="btn btn-danger btn-sm">
                     <i class="icon-trash"></i>
                   </button>
                 </td>
@@ -133,25 +133,34 @@
                     class="form-control"
                     placeholder="Nombre de categoría"
                   />
-                  <span class="help-block">(*) Ingrese el nombre de la categoría</span>
                 </div>
               </div>
               <div class="form-group row">
                 <label class="col-md-3 form-control-label" for="email-input">Descripción</label>
                 <div class="col-md-9">
                   <input
-                    type="email"
+                    type="text"
                     v-model="descripcion"
                     class="form-control"
-                    placeholder="Enter Email"
+                    placeholder="Ingrese descripción"
                   />
+                </div>
+              </div>
+              <div v-show="errorCategoria" class="form-group row div-error">
+                <div class="text-center text-error">
+                  <div v-for="(error) in errorMostrarMsjCategoria" :key="error" v-text="error"></div>
                 </div>
               </div>
             </form>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" @click="cerrarModal()">Cerrar</button>
-            <button type="button" v-if="tipoAccion==1" class="btn btn-primary">Guardar</button>
+            <button
+              type="button"
+              v-if="tipoAccion==1"
+              class="btn btn-primary"
+              @click="registrarCategoria()"
+            >Guardar</button>
             <button type="button" v-if="tipoAccion==2" class="btn btn-primary">Actualizar</button>
           </div>
         </div>
@@ -203,7 +212,9 @@ export default {
       arrayCategoria: [],
       modal: 0,
       tituloModal: "",
-      tipoAccion: 0
+      tipoAccion: 0,
+      errorCategoria: 0,
+      errorMostrarMsjCategoria: []
     };
   },
   methods: {
@@ -219,7 +230,39 @@ export default {
           console.log(error);
         });
     },
-    registrarCategoria() {},
+    validarCategoria() {
+      this.errorCategoria = 0;
+      this.errorMostrarMsjCategoria = [];
+
+      if (!this.nombre)
+        this.errorMostrarMsjCategoria.push(
+          "El nombre de la categoría no puede estar vacío"
+        );
+
+      if (this.errorMostrarMsjCategoria.length) this.errorCategoria = 1;
+
+      return this.errorCategoria;
+    },
+    registrarCategoria() {
+      let me = this;
+
+      if (this.validarCategoria()) {
+        return;
+      }
+
+      axios
+        .post("/categoria/registrar", {
+          nombre: this.nombre,
+          descripcion: this.descripcion
+        })
+        .then(function(response) {
+          me.cerrarModal();
+          me.listarCategoria();
+        })
+        .catch(function(error) {
+          console.log(error);
+        });
+    },
     abrirModal(modelo, accion, data = []) {
       switch (modelo) {
         case "categoria": {
@@ -233,6 +276,7 @@ export default {
               break;
             }
             case "actualizar": {
+              console.log(data);
             }
           }
         }
@@ -260,5 +304,13 @@ export default {
   opacity: 1 !important;
   position: absolute !important;
   background-color: #3c29297a !important;
+}
+.div-error {
+  display: flex;
+  justify-content: center;
+}
+.text-error {
+  color: red !important;
+  font-weight: bold !important;
 }
 </style>
