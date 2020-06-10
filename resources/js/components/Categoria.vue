@@ -77,12 +77,30 @@
                                         <i class="icon-pencil"></i>
                                     </button>
                                     &nbsp;
-                                    <button
-                                        type="button"
-                                        class="btn btn-danger btn-sm"
-                                    >
-                                        <i class="icon-trash"></i>
-                                    </button>
+                                    <template v-if="categoria.condicion">
+                                        <button
+                                            type="button"
+                                            class="btn btn-danger btn-sm"
+                                            @click="
+                                                desactivarCategoria(
+                                                    categoria.id
+                                                )
+                                            "
+                                        >
+                                            <i class="icon-trash"></i>
+                                        </button>
+                                    </template>
+                                    <template v-else>
+                                        <button
+                                            type="button"
+                                            class="btn btn-info btn-sm"
+                                            @click="
+                                                activarCategoria(categoria.id)
+                                            "
+                                        >
+                                            <i class="icon-check"></i>
+                                        </button>
+                                    </template>
                                 </td>
                                 <td v-text="categoria.nombre"></td>
                                 <td v-text="categoria.descripcion"></td>
@@ -103,23 +121,51 @@
                     </table>
                     <nav>
                         <ul class="pagination">
-                            <li class="page-item">
-                                <a class="page-link" href="#">Ant</a>
+                            <li
+                                class="page-item"
+                                v-if="pagination.current_page > 1"
+                            >
+                                <a
+                                    class="page-link"
+                                    href="#"
+                                    @click.prevent="
+                                        cambiarPagina(
+                                            pagination.current_page - 1
+                                        )
+                                    "
+                                    >Ant</a
+                                >
                             </li>
-                            <li class="page-item active">
-                                <a class="page-link" href="#">1</a>
+                            <li
+                                class="page-item"
+                                v-for="page in pagesNumber"
+                                :key="page"
+                                :class="[page == isActived ? 'active' : '']"
+                            >
+                                <a
+                                    class="page-link"
+                                    href="#"
+                                    @click.prevent="cambiarPagina(page)"
+                                    v-text="page"
+                                ></a>
                             </li>
-                            <li class="page-item">
-                                <a class="page-link" href="#">2</a>
-                            </li>
-                            <li class="page-item">
-                                <a class="page-link" href="#">3</a>
-                            </li>
-                            <li class="page-item">
-                                <a class="page-link" href="#">4</a>
-                            </li>
-                            <li class="page-item">
-                                <a class="page-link" href="#">Sig</a>
+                            <li
+                                class="page-item"
+                                v-if="
+                                    pagination.current_page <
+                                        pagination.last_page
+                                "
+                            >
+                                <a
+                                    class="page-link"
+                                    href="#"
+                                    @click="
+                                        cambiarPagina(
+                                            pagination.current_page + 1
+                                        )
+                                    "
+                                    >Sig</a
+                                >
                             </li>
                         </ul>
                     </nav>
@@ -144,7 +190,7 @@
                         <button
                             type="button"
                             class="close"
-                            @click="cerrarModal()"
+                            @click="cerrar()"
                             aria-label="Close"
                         >
                             <span aria-hidden="true">×</span>
@@ -205,7 +251,7 @@
                         <button
                             type="button"
                             class="btn btn-secondary"
-                            @click="cerrarModal()"
+                            @click="cerrar()"
                         >
                             Cerrar
                         </button>
@@ -220,6 +266,7 @@
                         <button
                             type="button"
                             v-if="tipoAccion == 2"
+                            @click="actualizarCategoria()"
                             class="btn btn-primary"
                         >
                             Actualizar
@@ -231,50 +278,6 @@
             <!-- /.modal-dialog -->
         </div>
         <!--Fin del modal-->
-        <!-- Inicio del modal Eliminar -->
-        <div
-            class="modal fade"
-            id="modalEliminar"
-            tabindex="-1"
-            role="dialog"
-            aria-labelledby="myModalLabel"
-            style="display: none;"
-            aria-hidden="true"
-        >
-            <div class="modal-dialog modal-danger" role="document">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h4 class="modal-title">Eliminar Categoría</h4>
-                        <button
-                            type="button"
-                            class="close"
-                            data-dismiss="modal"
-                            aria-label="Close"
-                        >
-                            <span aria-hidden="true">×</span>
-                        </button>
-                    </div>
-                    <div class="modal-body">
-                        <p>Estas seguro de eliminar la categoría?</p>
-                    </div>
-                    <div class="modal-footer">
-                        <button
-                            type="button"
-                            class="btn btn-secondary"
-                            data-dismiss="modal"
-                        >
-                            Cerrar
-                        </button>
-                        <button type="button" class="btn btn-danger">
-                            Eliminar
-                        </button>
-                    </div>
-                </div>
-                <!-- /.modal-content -->
-            </div>
-            <!-- /.modal-dialog -->
-        </div>
-        <!-- Fin del modal Eliminar -->
     </main>
 </template>
 
@@ -290,21 +293,70 @@ export default {
             tituloModal: "",
             tipoAccion: 0,
             errorCategoria: 0,
-            errorMostrarMsjCategoria: []
+            errorMostrarMsjCategoria: [],
+            pagination: {
+                total: 0,
+                current_page: 0,
+                per_page: 0,
+                last_page: 0,
+                from: 0,
+                to: 0
+            },
+            offset: 3
         };
     },
+    computed: {
+        isActived: function() {
+            return this.pagination.current_page;
+        },
+        pagesNumber: function() {
+            if (!this.pagination.to) {
+                return [];
+            }
+            var from = this.pagination.current_page - this.offset;
+            if (from < 1) {
+                from = 1;
+            }
+
+            var to = from + this.offset * 2;
+            if (to >= this.pagination.last_page) {
+                to = this.pagination.last_page;
+            }
+
+            var pagesArray = [];
+            while (from <= to) {
+                pagesArray.push(from);
+                from++;
+            }
+            return pagesArray;
+        }
+    },
     methods: {
-        listarCategoria() {
+        listarCategoria(page) {
             let me = this;
+            var url = "/categoria?page=" + page;
             axios
-                .get("/categoria")
+                .get(url)
                 .then(function(response) {
-                    me.arrayCategoria = response.data;
+                    var respuesta = response.data;
+                    me.arrayCategoria = respuesta.categorias.data;
+                    me.pagination = respuesta.pagination;
                 })
                 .catch(function(error) {
                     // handle error
                     console.log(error);
                 });
+        },
+        cambiarPagina(page) {
+            let me = this;
+            me.pagination.current_page = page;
+            me.listarCategoria(page);
+        },
+        cerrar() {
+            this.modal = 0;
+            this.tituloModal = "";
+            this.nombre = "";
+            this.descripcion = "";
         },
         validarCategoria() {
             this.errorCategoria = 0;
@@ -324,14 +376,36 @@ export default {
                 return;
             }
 
+            let me = this;
             axios
                 .post("/categoria/registrar", {
                     nombre: this.nombre,
                     descripcion: this.descripcion
                 })
                 .then(function(response) {
-                    this.cerrarModal();
-                    this.listarCategoria();
+                    me.cerrar();
+                    me.listarCategoria();
+                })
+                .catch(function(error) {
+                    console.log(error);
+                });
+        },
+        actualizarCategoria() {
+            if (this.validarCategoria()) {
+                return;
+            }
+
+            let me = this;
+
+            axios
+                .put("/categoria/actualizar", {
+                    id: this.categoria_id,
+                    nombre: this.nombre,
+                    descripcion: this.descripcion
+                })
+                .then(function(response) {
+                    me.listarCategoria();
+                    me.cerrar();
                 })
                 .catch(function(error) {
                     console.log(error);
@@ -343,7 +417,7 @@ export default {
                     switch (accion) {
                         case "registrar": {
                             this.modal = 1;
-                            this.tituloModal = "Registrar amaterasu";
+                            this.tituloModal = "Registrar categoria";
                             this.tipoAccion = 1;
                             this.nombre = "";
                             this.descripcion = "";
@@ -351,7 +425,7 @@ export default {
                         }
                         case "actualizar": {
                             this.modal = 1;
-                            this.tituloModal = "Actualizar categoría";
+                            this.tituloModal = "Actualizar amaterasu";
                             this.tipoAccion = 2;
                             this.categoria_id = data["id"];
                             this.nombre = data["nombre"];
@@ -362,11 +436,107 @@ export default {
                 }
             }
         },
-        cerrarModal() {
-            this.modal = 0;
-            this.tituloModal = "";
-            this.nombre = "";
-            this.descripcion = "";
+        desactivarCategoria(id) {
+            const swalWithBootstrapButtons = Swal.mixin({
+                customClass: {
+                    confirmButton: "btn btn-success",
+                    cancelButton: "btn btn-danger"
+                },
+                buttonsStyling: false
+            });
+
+            swalWithBootstrapButtons
+                .fire({
+                    title: "¿Estas seguro de desactivar?",
+                    text: "Se desactivara la categoria",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonText: "Si, desactivalo",
+                    cancelButtonText: "No, cancelar",
+                    reverseButtons: true
+                })
+                .then(result => {
+                    if (result.value) {
+                        console.log(result.value);
+                        let me = this;
+                        axios
+                            .put("/categoria/desactivar", {
+                                id: id
+                            })
+                            .then(function(response) {
+                                console.log(response.data);
+                                me.listarCategoria();
+                                swalWithBootstrapButtons.fire(
+                                    "Desactivado",
+                                    "El registro se ha desactivado con éxito",
+                                    "success"
+                                );
+                            })
+                            .catch(function(error) {
+                                console.log(error);
+                            });
+                    } else if (
+                        /* Read more about handling dismissals below */
+                        result.dismiss === Swal.DismissReason.cancel
+                    ) {
+                        swalWithBootstrapButtons.fire(
+                            "Cancelado",
+                            "Acción cancelada",
+                            "error"
+                        );
+                    }
+                });
+        },
+        activarCategoria(id) {
+            const swalWithBootstrapButtons = Swal.mixin({
+                customClass: {
+                    confirmButton: "btn btn-success",
+                    cancelButton: "btn btn-danger"
+                },
+                buttonsStyling: false
+            });
+
+            swalWithBootstrapButtons
+                .fire({
+                    title: "¿Estas seguro de activar?",
+                    text: "Se activara la categoria",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonText: "Si, activalo",
+                    cancelButtonText: "No, cancelar",
+                    reverseButtons: true
+                })
+                .then(result => {
+                    if (result.value) {
+                        console.log(result.value);
+                        let me = this;
+                        axios
+                            .put("/categoria/activar", {
+                                id: id
+                            })
+                            .then(function(response) {
+                                console.log(response.data);
+                                me.listarCategoria();
+                                swalWithBootstrapButtons.fire(
+                                    "Activado",
+                                    "El registro se ha activado con éxito",
+                                    "success"
+                                );
+                            })
+                            .catch(function(error) {
+                                console.log(error);
+                            });
+                    } else if (
+                        /* Read more about handling dismissals below */
+                        result.dismiss === Swal.DismissReason.cancel
+                    ) {
+                        swalWithBootstrapButtons.fire(
+                            "Cancelado",
+                            "Acción cancelada",
+                            "error"
+                        );
+                    }
+                });
         }
     },
     mounted() {
