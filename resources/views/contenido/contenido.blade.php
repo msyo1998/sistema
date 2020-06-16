@@ -9,6 +9,7 @@
 </template>
 
 <template v-if="menu==2">
+    <articulo></articulo>
 </template>
 
 <template v-if="menu==3">
@@ -40,4 +41,4 @@
 
 <template v-if="menu==12">
 </template>
-@endsection 
+@endsection
