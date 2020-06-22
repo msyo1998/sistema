@@ -16,18 +16,22 @@
 </template>
 
 <template v-if="menu==4">
+    <proveedor></proveedor>
 </template>
 
 <template v-if="menu==5">
 </template>
 
 <template v-if="menu==6">
+    <cliente></cliente>
 </template>
 
 <template v-if="menu==7">
+    <user></user>
 </template>
 
 <template v-if="menu==8">
+    <rol></rol>
 </template>
 
 <template v-if="menu==9">
